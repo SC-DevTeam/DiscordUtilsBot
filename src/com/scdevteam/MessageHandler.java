@@ -4,9 +4,7 @@ import de.btobastian.javacord.DiscordAPI;
 import de.btobastian.javacord.entities.message.Message;
 import de.btobastian.javacord.listener.message.MessageCreateListener;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 public class MessageHandler implements MessageCreateListener {
     private static final HashSet<String> sAdmins = new HashSet<>();
