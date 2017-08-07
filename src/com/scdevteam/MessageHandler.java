@@ -28,9 +28,17 @@ public class MessageHandler implements MessageCreateListener {
                     case "@help":
                         message.reply("```" +
                                 new String(SCUtils.hexToBuffer("2020205f5f5f5f5f205f5f5f5f5f5f5f5f5f5f20202020202020202020205f5f5f5f5f5f202020202020202020202020202020202020200d0a20202f205f5f5f2f2f205f5f5f5f2f205f5f205c5f5f5f205f2020205f2f5f20205f5f2f5f5f20205f5f5f5f205f5f5f5f5f205f5f5f200d0a20205c5f5f205c2f202f2020202f202f202f202f205f205c207c202f202f2f202f202f205f205c2f205f5f20602f205f5f20605f5f205c0d0a205f5f5f2f202f202f5f5f5f2f202f5f2f202f20205f5f2f207c2f202f2f202f202f20205f5f2f202f5f2f202f202f202f202f202f202f0d0a2f5f5f5f5f2f5c5f5f5f5f2f5f5f5f5f5f2f5c5f5f5f2f7c5f5f5f2f2f5f2f20205c5f5f5f2f5c5f5f2c5f2f5f2f202f5f2f202f5f2f"))
-                                + "\n\n@tag2id [tag]"
+                                + "\n\nUtils:\n"
+                                + "\n@str2hex [str]"
+                                + "\n@hex2str [str]"
+                                + "\n@tag2id [tag]"
                                 + "\n@id2tag [id]"
-                                + "\n@parser [hex payload] [optional - offset]\n" +
+                                + "\n@parser [hex payload] [optional - offset]\n"
+                                + "\nEncryption:\n"
+                                + "\n@nonce [s1] [s2] [s3 - optional]"
+                                + "\n@beforenm [s1] [s2]"
+                                + "\n@encrypt [hex payload] [nonce] [s1]"
+                                + "\n@decrypt [hex payload] [nonce] [s1]\n" +
                                 "```"
                         );
                         break;
@@ -61,6 +69,20 @@ public class MessageHandler implements MessageCreateListener {
                         BuffParser parser = new BuffParser(buffer, offset);
                         message.reply(parser.toDiscordResponse());
                         break;
+                    case "@str2hex":
+                        if (parts.length < 2) {
+                            message.reply("Usage: @str2hex [str]");
+                            return;
+                        }
+                        message.reply(SCUtils.toHexString(parts[1].getBytes()));
+                        break;
+                    case "@hex2str":
+                        if (parts.length < 2) {
+                            message.reply("Usage: @hex2str [str]");
+                            return;
+                        }
+                        message.reply(new String(SCUtils.hexToBuffer(parts[1])));
+                        break;
                     case "@tag2id":
                         if (parts.length < 2) {
                             message.reply("Usage: @tag2id [tag]");
@@ -80,6 +102,51 @@ public class MessageHandler implements MessageCreateListener {
                         long id = Long.parseLong(parts[1]);
                         message.reply("Tag: #" + SCUtils.tagFromId(id));
                         break;
+                }
+
+                if (sAdmins.contains(userId)) {
+                    switch (cmd) {
+                        case "@nonce":
+                            if (parts.length < 3) {
+                                message.reply("Usage: @nonce [s1] [s2] [s3 - optional]");
+                                return;
+                            }
+
+                            if (!Encryption.checkStringLen(parts[1]) ||
+                                    !Encryption.checkStringLen(parts[2]) ||
+                                    (parts.length > 3 && !Encryption.checkStringLen(parts[3]))) {
+                                message.reply("Keys must be 32 bytes");
+                                return;
+                            }
+
+                            String o = parts.length > 3 ? parts[3] : null;
+                            message.reply(Encryption.buildNonce(parts[1], parts[2], o));
+                            break;
+                        case "@beforenm":
+                            if (parts.length < 3) {
+                                message.reply("Usage: @beforenm [s1] [s2]");
+                                return;
+                            }
+
+                            message.reply(Encryption.beforeNm(parts[1], parts[2]));
+                            break;
+                        case "@encrypt":
+                            if (parts.length < 3) {
+                                message.reply("Usage: @encrypt [hex payload] [nonce] [s1]");
+                                return;
+                            }
+
+                            message.reply(Encryption.encrypt(parts[1], parts[2], parts[3]));
+                            break;
+                        case "@decrypt":
+                            if (parts.length < 3) {
+                                message.reply("Usage: @decrypt [hex payload] [nonce] [s1]");
+                                return;
+                            }
+
+                            message.reply(Encryption.decrypt(parts[1], parts[2], parts[3]));
+                            break;
+                    }
                 }
             }
         }
