@@ -1,6 +1,7 @@
 package com.scdevteam;
 
 import com.google.common.util.concurrent.FutureCallback;
+import com.scdevteam.discord.MessageHandler;
 import de.btobastian.javacord.DiscordAPI;
 import de.btobastian.javacord.Javacord;
 
@@ -9,12 +10,11 @@ public class Main  {
 
     public static void main(String[] args) {
         DiscordAPI api = Javacord.getApi(Configs.APIKEY, true);
-        api.setWaitForServersOnStartup(true);
 
         api.connect(new FutureCallback<DiscordAPI>() {
             @Override
             public void onSuccess(DiscordAPI api) {
-                System.out.print("CONN");
+                SCUtils.log("CONN");
 
                 api.registerListener(sHandler);
             }
@@ -24,5 +24,6 @@ public class Main  {
                 t.printStackTrace();
             }
         });
+
     }
 }

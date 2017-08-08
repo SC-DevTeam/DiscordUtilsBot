@@ -1,5 +1,7 @@
-package com.scdevteam;
+package com.scdevteam.discord;
 
+import com.scdevteam.SCUtils;
+import com.scdevteam.TweetNaCl;
 import ove.crypto.digest.Blake2b;
 
 public class Encryption {

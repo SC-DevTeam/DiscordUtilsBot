@@ -2,7 +2,6 @@ package com.scdevteam;
 
 import java.security.*;
 import java.util.Arrays;
-import java.util.Random;
 
 class Curve25519 {
     private static byte[] basePoint = new byte[]{9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -1169,7 +1168,7 @@ public class TweetNaCl {
         int i;
 
         if (!isSeeded)
-            randombytes(sk, 32);
+            randombytes(sk);
         crypto_hash(d, sk, 32);
         d[0] &= 248;
         d[31] &= 127;
@@ -1181,10 +1180,9 @@ public class TweetNaCl {
         for (i=0;i < 32;++i)sk[32 + i] = pk[i];
     }
 
-    public static int crypto_box_keypair(byte[] y,byte[] x, boolean isSeeded)
-    {
+    public static int crypto_box_keypair(byte[] y,byte[] x, boolean isSeeded) {
         if (!isSeeded)
-            randombytes(x,32);
+            randombytes(x);
         return crypto_scalarmult_base(y,x);
     }
 
@@ -2404,11 +2402,10 @@ public class TweetNaCl {
         }
     }
 
-    private static Random prng = getStrongCSPRNG();
-
-    private static void randombytes(byte[] b, int len) {
-        byte[] r = new byte[len];
-        prng.nextBytes(r);
-        System.arraycopy(r, 0, b, 0, len);
+    private static void randombytes(byte[] b) {
+        byte[] r = new byte[32];
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(r);
+        System.arraycopy(r, 0, b, 0, 32);
     }
 }

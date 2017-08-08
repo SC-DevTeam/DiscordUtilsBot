@@ -1,15 +1,22 @@
-package com.scdevteam;
+package com.scdevteam.discord;
 
+import com.scdevteam.BuffParser;
+import com.scdevteam.DiscordUtils;
+import com.scdevteam.SCUtils;
+import com.scdevteam.crclient.CRClient;
+import com.scdevteam.crclient.maps.MessageMap;
 import de.btobastian.javacord.DiscordAPI;
 import de.btobastian.javacord.entities.message.Message;
 import de.btobastian.javacord.listener.message.MessageCreateListener;
 
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 
 public class MessageHandler implements MessageCreateListener {
     private static final HashSet<String> sAdmins = new HashSet<>();
 
     private static final boolean DEBUG = false;
+    private static CRClient sCRClient = CRClient.getInstance();
 
     public MessageHandler() {
         sAdmins.add("168018245943558144"); // GIO
@@ -34,11 +41,16 @@ public class MessageHandler implements MessageCreateListener {
                                 + "\n@tag2id [tag]"
                                 + "\n@id2tag [id]"
                                 + "\n@parser [hex payload] [optional - offset]\n"
+                                + "\n== ADMINS ==\n"
                                 + "\nEncryption:\n"
                                 + "\n@nonce [s1] [s2] [s3 - optional]"
                                 + "\n@beforenm [s1] [s2]"
                                 + "\n@encrypt [hex payload] [nonce] [s1]"
-                                + "\n@decrypt [hex payload] [nonce] [s1]\n" +
+                                + "\n@decrypt [hex payload] [nonce] [s1]\n"
+                                + "\n== Clients ==\n"
+                                + "\n@status"
+                                + "\n@upcr"
+                                + "\n@killcr" +
                                 "```"
                         );
                         break;
@@ -92,20 +104,44 @@ public class MessageHandler implements MessageCreateListener {
                         if (tag.startsWith("#")) {
                             tag = tag.substring(1);
                         }
-                        message.reply("Long value: " + SCUtils.idFromTag(tag));
+                        BuffParser.SLong sLong = SCUtils.idFromTag(tag);
+                        message.reply("Hi: " + sLong.hi + " Lo: " + sLong.lo + " Val: " + sLong.v);
                         break;
                     case "@id2tag":
                         if (parts.length < 2) {
                             message.reply("Usage: @id2tag [id]");
                             return;
                         }
-                        long id = Long.parseLong(parts[1]);
+                        long l;
+                        try {
+                             l = Long.parseLong(parts[1]);
+                        } catch (Exception e) {
+                            message.reply("Insert a valid long");
+                            return;
+                        }
+                        BuffParser.SLong id = new BuffParser.SLong(
+                                ByteBuffer.wrap(SCUtils.fromLong(l)));
                         message.reply("Tag: #" + SCUtils.tagFromId(id));
                         break;
                 }
 
                 if (sAdmins.contains(userId)) {
                     switch (cmd) {
+                        case "@status":
+                            message.reply("CR Client: " + (!sCRClient.isConnected() ? "Offline" : "Online"));
+                            break;
+                        case "@upcr":
+                        case "@startcr":
+                            if (!sCRClient.isConnected()) {
+                                sCRClient.start(message);
+                            }
+                            break;
+                        case "@killcr":
+                            if (sCRClient != null && sCRClient.isConnected()) {
+                                sCRClient.kill();
+                                message.reply("CR Client killed");
+                            }
+                            break;
                         case "@nonce":
                             if (parts.length < 3) {
                                 message.reply("Usage: @nonce [s1] [s2] [s3 - optional]");

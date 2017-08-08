@@ -9,18 +9,19 @@ public class SCUtils {
     private static final char[] sHexTable = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
     private static final String[] sTagChars = {"0", "2", "8", "9", "P", "Y", "L", "Q", "G", "R", "J", "C", "U", "V"};
 
-    public static String tagFromId(long id) {
-        StringBuilder res = new StringBuilder();
+    public static String tagFromId(BuffParser.SLong sl) {
+        long id = (sl.lo << 8) + sl.hi;
+        String res = "";
         while (id > 0) {
             int rem = (int) Math.floor(id % sTagChars.length);
-            res.insert(0, sTagChars[rem]);
+            res = sTagChars[rem] + res;
             id -= rem;
             id /= sTagChars.length;
         }
-        return res.toString();
+        return res;
     }
 
-    public static long idFromTag(String tag) {
+    public static BuffParser.SLong idFromTag(String tag) {
         long id = 0;
         String[] t = tag.split("");
         for (int i = 0; i < t.length; i++) {
@@ -30,15 +31,33 @@ public class SCUtils {
             id *= sTagChars.length;
             id += charIndex;
         }
-        return id;
+
+        int high = (int) (id % 256);
+        int low = (int) ((id - high) >>> 8);
+
+        ByteBuffer b = ByteBuffer.allocate(8);
+        b.putInt(high);
+        b.putInt(low);
+        return new BuffParser.SLong(b);
     }
 
     public static int toInt32(byte[] b) {
         return ByteBuffer.wrap(b).order(ByteOrder.BIG_ENDIAN).getInt();
     }
 
+    public static int toInt24(byte[] b) {
+        return (b[0] & 0xFF) << 16 | (b[1] & 0xFF) << 8 | (b[2] & 0xFF);
+    }
+
+
     public static int toInt16(byte[] b) {
         return ByteBuffer.wrap(b).order(ByteOrder.BIG_ENDIAN).getShort();
+    }
+
+    public static byte[] fromLong(long l) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(8);
+        byteBuffer.putLong(l);
+        return byteBuffer.array();
     }
 
     public static byte[] fromInt32(int i) {
@@ -124,16 +143,20 @@ public class SCUtils {
         return new String(input);
     }
 
-    public static RrsInt32 readRrsInt32(byte input) {
-        short c = 0;
-        long value = 0;
-        long b;
-        long seventh;
-        long msb;
+    public static RrsInt32 readRrsInt32(ByteBuffer byteBuffer) {
+        int c = 0;
+        int value = 0;
+        int seventh;
+        int msb;
+        int b;
+
+        if (byteBuffer.remaining() < 5) {
+            byte[] s = Arrays.copyOf(byteBuffer.array(), 5);
+            byteBuffer = ByteBuffer.wrap(s);
+        }
 
         do {
-            b = input;
-
+            b = byteBuffer.get();
             if (c == 0) {
                 seventh = (b & 0x40) >> 6; // save 7th bit
                 msb = (b & 0x80) >> 7; // save msb
@@ -145,12 +168,11 @@ public class SCUtils {
             value |= (b & 0x7f) << (7 * c);
             ++c;
         } while ((b & 0x80) != 0);
-
-        value = (value >>> 1) ^ -(value & 1);
-        return new RrsInt32(c,value & 0x00000000ffffffffL);
+        value = ((value >>> 1) ^ -(value & 1));
+        return new RrsInt32(c, value);
     }
 
-    public static int readVarInt32(long value) {
+    public static int readVarInt32Length(long value) {
         if (value < 1 << 7) {
             return 1;
         }
@@ -171,9 +193,9 @@ public class SCUtils {
     }
 
     public static class RrsInt32 {
-        public short length;
+        public int length;
         public long value;
-        public RrsInt32(short length, long value) {
+        public RrsInt32(int length, long value) {
             this.length = length;
             this.value = value;
         }
