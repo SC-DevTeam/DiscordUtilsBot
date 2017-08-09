@@ -62,9 +62,7 @@ public class ClientCrypto extends Crypto {
 
                 try {
                     toEncrypt.write(sessionKey);
-                    System.out.print(SCUtils.toHexString(serverKey) + "\n");
                     toEncrypt.write(encryptNonce.getBytes());
-                    System.out.print(SCUtils.toHexString(encryptNonce.getBytes()) + "\n");
                     toEncrypt.write(message.getDecryptedPayload());
                 } catch (IOException ignored) {}
 

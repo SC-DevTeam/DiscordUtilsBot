@@ -19,5 +19,10 @@
     <orderEntry type="library" name="json-20170516" level="project" />
     <orderEntry type="library" name="nv-websocket-client-2.3" level="project" />
     <orderEntry type="library" name="ove.blake2b-alpha.0" level="project" />
+    <orderEntry type="library" name="nitrite-1.0.1" level="project" />
+    <orderEntry type="library" name="h2-mvstore-1.4.196" level="project" />
+    <orderEntry type="library" name="jackson-core-2.9.0" level="project" />
+    <orderEntry type="library" name="jackson-databind-2.9.0" level="project" />
+    <orderEntry type="library" name="jackson-annotations-2.9.0" level="project" />
   </component>
 </module>

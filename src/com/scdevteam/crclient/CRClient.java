@@ -41,7 +41,6 @@ public class CRClient {
 
     public void start(Message message) {
         sDiscordLocker = message;
-
         new Thread(this::connect).start();
     }
 
@@ -68,7 +67,6 @@ public class CRClient {
                     StringBuilder dPing = new StringBuilder();
                     ByteBuffer payload = ByteBuffer.allocate(len);
 
-                    int read = 0;
                     int o = len;
                     while (o != 0) {
                         byte[] a = new byte[o];
@@ -78,18 +76,14 @@ public class CRClient {
                             break;
                         }
                         o -= r;
-                        read += r;
+
                         payload.put(ByteBuffer.wrap(a, 0, r));
-                        SCUtils.log("Added chunks for: " +
-                                responseMessage.getMessageID() + " l: " + len
-                        + " rem: " + o + " read: " + read);
                     }
 
                     responseMessage.finish(payload, sCrypto);
-                    SCUtils.log("Finished: " + responseMessage.getMessageID());
 
                     if (msgId != 20107 && msgId != 20108) {
-                        if (msgId != 20104) {
+                        if (msgId != 20104 && msgId != 24311) {
                             String map = MessageMap.getMap(responseMessage.getMessageID(),
                                     responseMessage.getDecryptedPayload());
                             dPing.append("IN ---> ")
@@ -109,12 +103,11 @@ public class CRClient {
                                     .append("\nLENGTH: ")
                                     .append(responseMessage.getPayloadLength());
                         }
-                        SCUtils.log(SCUtils.toHexString(responseMessage.getDecryptedPayload()));
                     }
 
                     if (dPing.length() > 0) {
                         String d = dPing.toString();
-                        DiscordUtils.sendMessage(d, sDiscordLocker);
+                        DiscordUtils.getInstance().sendMessage(d, sDiscordLocker);
                     }
 
                     handleResponse(responseMessage);
@@ -130,11 +123,16 @@ public class CRClient {
     public void kill() {
         if (isConnected()) {
             try {
+                sSocket.shutdownInput();
+                sSocket.shutdownOutput();
+
                 sSocket.close();
                 sOs.close();
 
-                sRoutine.cancel();
-                sRoutine = null;
+                if (sRoutine != null) {
+                    sRoutine.cancel();
+                    sRoutine = null;
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -165,7 +163,7 @@ public class CRClient {
             sOs.write(requestMessage.buildMessage().array());
             sOs.flush();
             if (messageId != 10107 && messageId != 10108) {
-                DiscordUtils.sendMessage("OUT ---> " +
+                DiscordUtils.getInstance().sendMessage("OUT ---> " +
                         MessageMap.getMessageType(messageId) +
                         "\nLENGTH: " + payload.length, sDiscordLocker);
             }

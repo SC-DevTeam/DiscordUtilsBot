@@ -1,19 +1,22 @@
 package com.scdevteam.crclient.maps.mappers;
 
 public abstract class Mapper {
+    public enum MapValueType {
+        COMPONENT, INT32, LONG, RRSINT32, STRING, BOOLEAN, TAG
+    }
     public class MapPoint {
         private final String mName;
-        private int mMapValue;
+        private MapValueType mMapValue;
         private Mapper mComponentMapPoint;
 
-        public MapPoint(String name, int mapValue) {
+        public MapPoint(String name, MapValueType mapValue) {
             mName = name;
             mMapValue = mapValue;
         }
 
         public MapPoint(String name, Mapper componentMapPoint) {
             mName = name;
-            mMapValue = -1;
+            mMapValue = MapValueType.COMPONENT;
             mComponentMapPoint = componentMapPoint;
         }
 
@@ -24,7 +27,7 @@ public abstract class Mapper {
             return mName;
         }
 
-        public int getMapValue() {
+        public MapValueType getMapValue() {
             return mMapValue;
         }
 

@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="jffi-1.2.17-SNAPSHOT-native">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/libs/jffi-1.2.17-SNAPSHOT-native.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

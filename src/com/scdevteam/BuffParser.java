@@ -15,8 +15,8 @@ public class BuffParser {
 
     public String toDiscordResponse() {
         StringBuilder res = new StringBuilder();
-        parseLong(res);
         parseInt(res);
+        parseLong(res);
         parseBoolean(res);
         parseString(res);
         parseRrsInt(res);
@@ -33,9 +33,16 @@ public class BuffParser {
             p.get(z, 0, 8);
             res.append(SCUtils.toHexString(z));
             p = ByteBuffer.wrap(z);
+            SLong sLong = new SLong(p);
+            res.append("\n");
+            res.append("high: ");
+            res.append(sLong.hi);
+            res.append("\n");
+            res.append("low: ");
+            res.append(sLong.lo);
             res.append("\n");
             res.append("value: ");
-            res.append(p.getLong() & 0x00000000ffffffffL);
+            res.append(sLong.v);
         } catch (Exception ignored) {
             res.append("0");
         }
@@ -43,7 +50,7 @@ public class BuffParser {
     }
 
     private void parseInt(StringBuilder res) {
-        res.append("INT 32:");
+        res.append("INT32:");
         res.append("\n");
         try {
             byte[] z = new byte[4];
@@ -163,9 +170,9 @@ public class BuffParser {
         return new String(s);
     }
 
-    public int readRssInt32() {
+    public RrsInt readRssInt32() {
         int c = 0;
-        int value = 0;
+        int v = 0;
         int seventh;
         int msb;
         int b;
@@ -185,10 +192,11 @@ public class BuffParser {
                 b = b | (msb << 7) | (seventh); // insert msb and 6th back in
             }
 
-            value |= (b & 0x7f) << (7 * c);
+            v |= (b & 0x7f) << (7 * c);
             ++c;
         } while ((b & 0x80) != 0);
-        return ((value >>> 1) ^ -(value & 1));
+        v = ((v >>> 1) ^ -(v & 1));
+        return new RrsInt(c, v);
     }
 
     public boolean hasRemaining() {
@@ -201,18 +209,29 @@ public class BuffParser {
         return r;
     }
 
+    public ByteBuffer cloneBuffer() {
+        return mByteBuffer.duplicate();
+    }
+
     public static class SLong {
         public final int hi;
         public final int lo;
         public final long v;
         public SLong(ByteBuffer b) {
-            SCUtils.log(SCUtils.toHexString(b.array()));
             b.rewind();
             v = b.getLong();
             b.rewind();
             hi = b.getInt();
             lo = b.getInt();
-            SCUtils.log(hi + " " + lo + " " + v);
+        }
+    }
+
+    public static class RrsInt {
+        public int len;
+        public int val;
+        public RrsInt(int len, int val) {
+            this.len = len;
+            this.val = val;
         }
     }
 }

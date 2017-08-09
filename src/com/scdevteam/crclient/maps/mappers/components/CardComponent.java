@@ -6,7 +6,7 @@ public class CardComponent extends Mapper {
     @Override
     public MapPoint[] getMapPoints() {
         return new MapPoint[] {
-                new MapPoint("card", 2)
+                new MapPoint("card", MapValueType.RRSINT32)
         };
     }
 }

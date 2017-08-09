@@ -5,6 +5,8 @@ import com.scdevteam.SCUtils;
 import com.scdevteam.crclient.maps.mappers.Mapper;
 import com.scdevteam.crclient.maps.mappers.server.OwnHomeData;
 
+import java.nio.ByteBuffer;
+
 public class MessageMap {
     public static final short CLIENT_HELLO = 10100;
     public static final short LOGIN = 10101;
@@ -339,9 +341,9 @@ public class MessageMap {
             }
 
             if (buffParser.hasRemaining()) {
-                r.append("\n\nRemainings:\n")
-                        .append(SCUtils.toHexString(buffParser.remaining()));
-
+                byte[] rem = buffParser.remaining();
+                SCUtils.log("REMAININGS:\n" + new String(rem));
+                SCUtils.log("REMAININGS HEX:\n" + SCUtils.toHexString(rem));
             }
             return r.toString();
         }
@@ -351,70 +353,93 @@ public class MessageMap {
 
     private static void populateMapPoint(Mapper.MapPoint mapPoint, StringBuilder r,
                                          BuffParser buffParser, int i, boolean sub) {
-        if (mapPoint.getMapValue() != -1) {
-            r.append(mapPoint.getName(i)).append("\n");
+        String n = mapPoint.getName(i);
+        if (mapPoint.getMapValue() != Mapper.MapValueType.COMPONENT) {
+            r.append(n).append("\n");
         } else {
-            r.append(mapPoint.getName(i))
+            r.append(n)
                     .append(" ")
                     .append(i)
                     .append("\n");
         }
+
+        ByteBuffer clone = buffParser.cloneBuffer();
+        byte[] d;
+
         switch (mapPoint.getMapValue()) {
-            case -1:
+            case COMPONENT:
                 if (!sub) {
                     r.append("\n");
                 }
-                int len = buffParser.readRssInt32();
+                int len = buffParser.readRssInt32().val;
                 for (int k=0;k<len;k++) {
                     populateMapPoint(mapPoint.getComponent().getMapPoints()[0],
-                            r, buffParser, k, true);
+                            r, buffParser, k + 1, true);
                 }
                 break;
-            case 0:
+            case INT32:
+                d = new byte[4];
+                clone.get(d, 0, 4);
+
                 r.append(buffParser.readInt())
+                        .append(" ")
+                        .append(SCUtils.toHexString(d))
                         .append(" (INT)");
                 break;
-            case 1:
+            case LONG:
+                d = new byte[8];
+                clone.get(d, 0, 8);
                 r.append(buffParser.readLong().hi)
                         .append(" ")
                         .append(buffParser.readLong().lo)
+                        .append(" ")
+                        .append(SCUtils.toHexString(d))
                         .append(" (LONG)");
                 break;
-            case 2:
-                r.append(buffParser.readRssInt32())
+            case RRSINT32:
+                BuffParser.RrsInt rrsInt = buffParser.readRssInt32();
+
+                d = new byte[rrsInt.len];
+                clone.get(d, 0, rrsInt.len);
+
+                r.append(rrsInt.val)
+                        .append(" ")
+                        .append(SCUtils.toHexString(d))
                         .append(" (RSSINT32)");
                 break;
-            case 3:
+            case STRING:
                 r.append(buffParser.readString())
                         .append(" (STRING)");
                 break;
-            case 4:
+            case BOOLEAN:
+                d = new byte[1];
+                clone.get(d, 0, 1);
                 r.append(buffParser.readBoolean())
+                        .append(" ")
+                        .append(SCUtils.toHexString(d))
                         .append(" (BOOLEAN)");
                 break;
-            case 5:
+            case TAG:
+                d = new byte[8];
+                clone.get(d, 0, 8);
                 BuffParser.SLong l = buffParser.readLong();
                 r.append(l.hi)
                         .append(" ")
                         .append(l.lo)
                         .append(" ")
+                        .append(l.v)
+                        .append(" ")
                         .append(SCUtils.tagFromId(l))
+                        .append(" ")
+                        .append(SCUtils.toHexString(d))
                         .append(" (TAG)");
 
         }
-        r.append("\n");
+        if (mapPoint.getMapValue() != Mapper.MapValueType.COMPONENT) {
+            r.append("\n\n");
+        }
     }
 
-    /**
-     * -1: COMPONENT
-     *
-     * 0: INT32
-     * 1: LONG
-     * 2: RSSINT32
-     * 3: STRING
-     * 4: BOOLEAN
-     * 5: TAG (Player/Clan tag + LONG)
-     */
     private static Mapper getMap(int msgId) {
         switch (msgId) {
             case 24101:
